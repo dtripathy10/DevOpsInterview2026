@@ -22,3 +22,6 @@
 - Build cache (BuildKit)
 - **Multi-stage builds**: A multi-stage build separates the application build environment from the runtime environment. This reduces the final image size by excluding build tools and other unnecessary files.
 - Docker image build best practices https://docs.docker.com/build/building/best-practices/
+
+## Interview Questions
+- https://github.com/Devinterview-io/docker-interview-questions
