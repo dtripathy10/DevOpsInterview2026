@@ -18,11 +18,11 @@
 - **Dockerfile**: A file containing instructions for building a Docker image. https://docs.docker.com/reference/dockerfile/
 - **Docker Compose**: A tool for defining and running multi-container applications using a YAML configuration file.
 
-## Important Docker Concepts
+## Important Docker Concept
 - Build cache (BuildKit)
 - **Multi-stage builds**: A multi-stage build separates the application build environment from the runtime environment. This reduces the final image size by excluding build tools and other unnecessary files.
 - Docker image build best practices https://docs.docker.com/build/building/best-practices/
 
-## Interview Questions
+## Interview Question
 - https://github.com/Devinterview-io/docker-interview-questions
 - CLI Cheat Sheet - https://docs.docker.com/get-started/docker_cheatsheet.pdf
