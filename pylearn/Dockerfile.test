@@ -1,0 +1,8 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY sample.py .
+
+ENTRYPOINT ["python", "sample.py","jon", "-p", "5000"]
+CMD ["-profile", "dev"]

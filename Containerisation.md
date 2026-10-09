@@ -26,3 +26,9 @@
 ## Interview Question
 - https://github.com/Devinterview-io/docker-interview-questions
 - CLI Cheat Sheet - https://docs.docker.com/get-started/docker_cheatsheet.pdf
+
+## EntryPoint Pattern in Dockerfile
+
+- https://github.com/jetty/jetty.docker/blob/master/amazoncorretto/12.0/jdk17-alpine/docker-entrypoint.sh
+
+- https://github.com/nodejs/docker-node/blob/main/docker-entrypoint.sh
