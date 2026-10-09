@@ -873,3 +873,111 @@ Observability
 Application logs go to the journal, while `systemctl status` exposes the service's state and exit information.
 
 My recommendation: work through this service in stages. First, understand `ExecStart`, `User`, `WorkingDirectory` and environment variables. Next, learn restart policies and journald. Finally, focus on `Type=notify`, watchdogs, managed directories and security hardening. Those are the concepts that turn a basic process into a well-managed Linux service.
+
+The confusion comes from the fact that `systemd`, `systemctl`, and `service` are related, but they are not the same thing.
+
+In Linux, the word service can mean a background application, a systemd unit, or the `service` command.
+
+## 1. Understand the difference
+
+| Term              | What it is                                                                                        | Example                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Service           | A background application that performs a task                                                     | Your Python API                             |
+| systemd           | The system manager that starts and supervises services                                            | Manages your Python application's lifecycle |
+| systemctl         | The command-line tool used to communicate with systemd                                            | `systemctl restart demo-python`             |
+| `service` command | A traditional command for controlling services, often compatible with older Linux service scripts | `service demo-python restart`               |
+| `.service` file   | The configuration file describing a systemd service                                               | `demo-python.service`                       |
+
+Think of the relationship like this:
+
+systemctl / service
+
+Commands used to manage services
+
+systemd
+
+The service manager running in the background
+
+Python application
+
+The actual process being managed
+
+## 2. Compare the commands using our Python application
+
+Suppose we have already created `demo-python.service`.
+
+Using `systemctl`:
+
+Bash
+
+```
+sudo systemctl start demo-python
+sudo systemctl stop demo-python
+sudo systemctl restart demo-python
+sudo systemctl status demo-python
+```
+
+Using the traditional `service` command:
+
+Bash
+
+```
+sudo service demo-python start
+sudo service demo-python stop
+sudo service demo-python restart
+sudo service demo-python status
+```
+
+On many modern Linux distributions that use systemd, the `service` command is a compatibility interface that delegates to the relevant service manager. On older systems using SysVinit, it typically operates through scripts under `/etc/init.d/`.
+
+For a systemd-based server, prefer `systemctl`, especially when configuring boot-time startup, inspecting dependencies, examining restart counts, or troubleshooting.
+
+For example:
+
+Bash
+
+```
+sudo systemctl enable demo-python
+sudo systemctl show demo-python -p MainPID -p NRestarts
+journalctl -u demo-python -f
+```
+
+These commands provide systemd-specific functionality beyond the basic start/stop interface.
+
+## 3. What about a `.service` file?
+
+This is a separate meaning of the word service.
+
+Our file:
+
+```
+/etc/systemd/system/demo-python.service
+```
+
+defines how systemd should run the Python application.
+
+For example:
+
+INI
+
+```
+[Service]
+User=pyapp
+WorkingDirectory=/opt/demo-python
+ExecStart=/usr/bin/python3 /opt/demo-python/app.py
+Restart=on-failure
+```
+
+The `.service` file tells systemd how to run and manage the application. The `systemctl` command tells systemd what action to perform.
+
+### Remember this
+
+* Service = the background application.
+
+* systemd = the manager.
+
+* systemctl = the modern management command.
+
+* `service` = the traditional compatibility command.
+
+* `.service` file = the configuration describing how the application runs.
