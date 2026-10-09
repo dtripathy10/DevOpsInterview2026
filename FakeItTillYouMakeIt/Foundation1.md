@@ -233,6 +233,74 @@ Candidate: "I would take one of two approaches depending on the urgency:"
 ------------------------------
 
 
+------------------------------
+## 🎙️ The Interview Scenario
+Interviewer: "Manually typing kubectl describe or digging through events during an incident is inefficient at scale. How do you export all Kubernetes logs and events to a centralized tool like Splunk? And fundamentally, does Kubernetes store this data in memory or on the file system? If on the file system, where exactly is it located?"
+Candidate: "To get logs into Splunk, we implement a log-shipping architecture using agents like Fluentd, Fluent Bit, or the Splunk Connect for Kubernetes (SCK) daemonset.
+Regarding storage:
+
+* Container Logs are written directly to the host node's file system at /var/log/pods/.
+* Kubernetes Events, however, are stored in memory within the control plane's etcd database, and by default, they are completely deleted after just 1 hour.
+
+Because events disappear so quickly from memory, shipping them to an external tool like Splunk is critical for historical post-mortems."
+------------------------------
+## 🔍 Deep Dive & Architecture## Interviewer: "Let's break down the logging side first. Walk me through the exact path a log takes from an application to Splunk."
+Candidate: "Kubernetes leverages a node-level logging architecture, which follows a specific pipeline:"
+
+| Component | Path / Mechanism | Role in the Pipeline |
+|---|---|---|
+| 1. Application | stdout / stderr | The app streams logs to standard output. The container engine (containerd) captures these. |
+| 2. Host File System | /var/log/pods/<namespace>_<pod>_<uid>/<container>/<retry>.log | Containerd writes these streams into JSON or CRI-formatted log files on the actual worker node. |
+| 3. Log Forwarder | DaemonSet (e.g., Fluent Bit, Splunk OpenTelemetry Collector) | Runs as a pod on every node, mounts /var/log/pods, continuously scrapes new lines, and enriches them with metadata (Namespace, Pod Name). |
+| 4. Splunk | HTTP Event Collector (HEC) | The log forwarder streams the enriched JSON logs securely over HTTPS to the Splunk indexers. |
+
+## Interviewer: "You mentioned Kubernetes Events are in etcd and only last 1 hour. How do we catch those and send them to Splunk before they vanish?"
+Candidate: "Since events don't exist as flat files on /var/log/pods, log forwarders can't just scrape a directory. Instead, we deploy an Event Exporter or use the Splunk Kubernetes Logging agent configured for events.
+This specialized agent acts as a client that continuously watches the Kubernetes API stream (kubectl get events --watch programmatically). As soon as the API server generates an event, the exporter intercepts it and forwards it straight to Splunk."
+## Interviewer: "What are the engineering trade-offs of storing logs on the node's file system at /var/log/pods? What risks do you look out for?"
+Candidate: "The primary risk is Disk Pressure (DiskPressure). If an application goes into a verbose logging frenzy, it can rapidly fill up the node's root filesystem.
+To prevent this from taking down the worker node, we must configure kubelet log rotation in the kubelet configuration file:"
+
+# Kubelet Configuration ExamplecontainerLogMaxSize: "10Mi"     # Restricts an individual log file sizecontainerLogMaxFiles: 5          # Keeps a maximum of 5 rotated files per container
+
+"If an app logs past this threshold, older logs are aggressively deleted from /var/log/pods. Centralizing them in Splunk ensures we don't lose that data when rotation occurs."
+------------------------------
+Would you like to explore how to write an optimized Splunk SPL query to search for those exact CreateContainerConfigError events we discussed, or should we switch gears to Kubernetes security (RBAC)? Let me know your preference!
+
+
+------------------------------
+## 🎙️ The Interview Scenario
+Interviewer: "In theory, we use kubectl and look at /var/log/pods. But in a massive enterprise environment with thousands of microservices, hundreds of clusters, and locked-down production access, developers don't have SSH or direct kubectl admin access. How do engineering teams actually debug production incidents in a real enterprise?"
+Candidate: "In a mature enterprise, debugging is done entirely through an Observability Stack—combining Centralized Logging (Splunk/Elastic), Distributed Tracing (Jaeger/OpenTelemetry), and Metrics (Prometheus/Grafana)—rather than raw CLI commands.
+Production access is strictly restricted by Least Privilege RBAC. Directly running kubectl commands against a live production cluster is treated as a security exception or a highly audited, temporary 'Break-Glass' event. Teams rely on automated correlation to find root causes instantly."
+------------------------------
+## 🔍 The Enterprise Debugging Workflow## Interviewer: "Walk me through a real-world scenario. A P1 incident alert fires: a core payment service is failing. What are the exact steps an enterprise engineer takes without touching the CLI?"
+Candidate: "They follow a highly structured, tooling-driven pipeline to isolate the issue without risking cluster stability:"
+
+| Phase | Enterprise Tooling | Action taken by the Engineer |
+|---|---|---|
+| 1. Triage & Alerting | PagerDuty / Opsgenie + Grafana | An alert fires because the service's HTTP 5xx error rate crossed a threshold. The engineer clicks the link in the alert, which takes them directly to a pre-built Grafana dashboard filtered to that exact cluster and service. |
+| 2. Isolate the Blast Radius | APM Service Map (Datadog / Dynatrace / New Relic) | The engineer looks at a live topology map. They immediately see if the payment service itself is broken, or if it's lagging because a downstream database or third-party API is slow. |
+| 3. Trace the Request | Distributed Tracing (OpenTelemetry / Jaeger) | They grab a specific failing transaction ID. Tracing shows the exact path of that single request across 5 different microservices, pinpointing the precise line of code or database query that timed out. |
+| 4. Analyze the Root Cause | Centralized Logs (Splunk / Kibana) | The trace links directly to the logs for that exact container. The engineer reviews the stack trace in Splunk. They notice a CreateContainerConfigError or a database connection pool exhaustion. |
+
+------------------------------
+## 🛡️ Secure Enterprise Troubleshooting Tools## Interviewer: "What happens if the observability stack shows that the issue isn't the application code, but a weird Kubernetes networking or configuration bug? How do they inspect the cluster if kubectl is blocked?"
+Candidate: "Enterprises bridge the gap between security and debugging by using audited, read-only UIs and tightly controlled access workflows:"
+
+* Read-Only Cluster Dashboards: Instead of the CLI, developers use platforms like Lens, OpenLens, or the ArgoCD UI. These UIs are tied to corporate Single Sign-On (SSO) and Azure AD/Okta, allowing developers to safely view pod states, events, and configurations in real-time without write permissions.
+* Just-In-Time (JIT) Privileged Access: If an engineer absolutely must run a command like kubectl exec to debug a network packet drop, they use tools like Teleport, Boundary, or CyberArk. They request temporary 'Break-Glass' access. This access automatically expires after 1 hour, requires a peer approval link, and completely records the entire terminal session for security auditing.
+* Ephemeral Debug Containers: Modern enterprises ban SSH to worker nodes. If a container is completely locked up or missing debugging tools (like curl or tcpdump in a distroless image), engineers use:
+
+kubectl debug pod/payment-app-xyz -it --image=nicolaka/netshoot
+
+This spins up a temporary sidecar container inside the same network namespace to safely run network diagnostics without altering the production app.
+
+------------------------------
+Would you like to simulate a mock interview incident where an enterprise application is running fine but intermittently throwing 504 Gateway Timeouts, or would you like to practice writing a Splunk SPL query to hunt down production errors? Let me know where we should go next!
+
+
+
 
 ### Summary Rule of Thumb
 
