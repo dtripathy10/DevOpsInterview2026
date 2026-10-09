@@ -1,0 +1,19 @@
+# Creat table using command line
+
+aws dynamodb create-table 
+    --table-name MusicCollection
+    --attribute-definitions AttributeName=Artist,AttributeType=S AttributeName=SongTitle,AttributeType=SongTitle
+    --key-schema AttributeName=Artist,KeyType=HASH AttributeName=SongTitle,KeyType=RANGE
+    --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1
+    --region 'ap-southeast-2'
+
+
+# List dynamodb tables
+aws dynamodb list-tables --region 'ap-southeast-2'
+
+# Delete table
+aws dynamodb delete-table --table-name MusicCollection --region 'ap-southeast-2'
+
+
+# Create table via cloud formation
+aws cloudformation create-stack --stack-name "MyDynamoDb" --template-body "file://cloudformation/mytable.yaml" --region 'ap-southeast-2'

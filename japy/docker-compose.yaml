@@ -1,0 +1,75 @@
+# version is now using "compose spec"
+# v2 and v3 are now combined!
+# docker-compose v1.27+ required
+
+services:
+  app_1:
+    hostname: app1.dev
+    build: 
+      context: ./app1
+    volumes:
+     - ./vote:/usr/local/app
+    # ports:
+    #   - "5000:80"
+
+  app_2:
+    hostname: app2.dev
+    build: ./app2
+    
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    # ports:
+    #   - "5001:80"
+
+  app_3:
+    hostname: app3.dev
+    build:
+      context: ./app3
+    # ports:
+    #   - "5002:80"
+  
+  app_4:
+    hostname: app4.dev
+    build:
+      context: ./app4
+    # ports:
+    #   - "5003:80"
+
+  app_5:
+    hostname: app5.dev
+    build:
+      context: ./app5
+    # ports:
+    #   - "5004:80"
+
+  gateway:
+    hostname: gateway.dev
+    build:
+      context: ./gateway
+    # ports:
+    #   - "80:8980"
+  
+  opa:
+    hostname: opa.dev
+    build:
+      context: ./opa
+    # ports:
+    #   - "80:8980"
+
+  proxy:
+    hostname: proxy.dev
+    build: ./proxy
+    ports:
+      - "8080:80"
+      - "8001:8001"
+    volumes:
+      - ./proxy/envoy.yaml:/config/envoy.yaml
+    environment:
+      - DEBUG_LEVEL=debug
+      - SERVICE_NAME=app5.dev
+      - SERVICE_PORT=80
+  
+
+volumes:
+  db-data:

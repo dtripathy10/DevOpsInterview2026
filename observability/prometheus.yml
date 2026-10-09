@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s # How often to fetch metrics
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'windows-server'
+    static_configs:
+      # If windows_exporter is on the docker host, use host.docker.internal
+      # Otherwise, use the explicit network IP of the Windows machine
+      - targets: ['host.docker.internal:9182'] 
