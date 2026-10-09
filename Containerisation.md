@@ -32,3 +32,15 @@
 - https://github.com/jetty/jetty.docker/blob/master/amazoncorretto/12.0/jdk17-alpine/docker-entrypoint.sh
 
 - https://github.com/nodejs/docker-node/blob/main/docker-entrypoint.sh
+
+
+## Interview Questions
+
+- How do you publish docker build, container execution & event logs to splunk?
+- How do you access a web server running on the host netowrk?
+- How do you pass secrets to a Docker image build?
+- How do you add custom logic during a container run? For example, how do you verify that a database is running properly before starting a web server, and halt the process if it is not?
+- How do you access a process running on the host from inside a Docker container? For example, if you have a custom process on the host that can be invoked via a command-line argument, how would you execute or trigger it from within the container?
+- How would you reduce image size and build time? (Multi-stage builds, layer caching, .dockerignore, base image choice)
+- How do you make builds reproducible, and how do you handle vulnerable base images over time?
+- What happens when you docker stop? Why might a container take 10 seconds to stop? (PID 1, SIGTERM handling, graceful shutdown)
