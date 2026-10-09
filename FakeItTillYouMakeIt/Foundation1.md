@@ -1,13 +1,10 @@
 ## When you execute `kubectl apply -f deployment.yaml`, Kubernetes processes your declarative intent through a distributed, event-driven control plane.
-
 ---
-
 ### Step 1: Authentication, Authorization, & Validation (`kubectl` + API Server)
 
 1. **Local Processing (`kubectl`):**
 * `kubectl` parses your YAML locally and validates its client-side structure.
 * It sends an HTTP POST or PATCH request containing the desired manifest payload to the **kube-apiserver**.
-
 
 2. **API Server Request Pipeline:**
 * **Authentication & Authorization:** `kube-apiserver` verifies the caller's identity (client certificates, token, or IAM via EKS) and checks RBAC permissions (`can the user create/update deployments in this namespace?`).
@@ -15,15 +12,10 @@
 * **Schema Validation:** Ensures the deployment payload meets the API schema definition.
 * **Validating Admission Webhooks:** Evaluates organizational policies (e.g., OPA Gatekeeper/Kyverno checking if images come from approved registries).
 
-
 3. **Storage (`etcd`):**
 * Once validated, `kube-apiserver` writes the desired `Deployment` specification to **etcd** (the cluster's key-value datastore).
 * The API Server emits a `Created` / `Updated` event.
-
-
-
 ---
-
 ### Step 2: Deployment Controller (`kube-controller-manager`)
 
 The **Deployment Controller** runs inside `kube-controller-manager` and watches the API server for changes to `Deployment` resources:
@@ -234,17 +226,11 @@ Candidate: "The users will immediately experience a total outage, typically seei
 ## Interviewer: "If you walked into this situation in a live production incident, how would you manually force a recovery right away?"
 Candidate: "I would take one of two approaches depending on the urgency:"
 
-* To gracefully replace them: I would trigger a rolling restart using:
+* To gracefully replace them: I would trigger a rolling restart using: ```kubectl rollout restart deployment <deployment-name>```
 
-kubectl rollout restart deployment <deployment-name>
-
-* To instantly nuke and recreate them: If a quick reset is needed, I would delete the pods by their label:
-
-kubectl delete pods -l app=<your-app-label>
-
+* To instantly nuke and recreate them: If a quick reset is needed, I would delete the pods by their label: ```kubectl delete pods -l app=<your-app-label>```
 
 ------------------------------
-Would you like to practice answering follow-up questions on how to debug a stuck readiness probe, or would you like to mock a scenario involving Startup Probes? Let me know what area you want to focus on next!
 
 
 
