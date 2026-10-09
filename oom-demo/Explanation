@@ -1,11 +1,7 @@
 cd oom-demo
 docker build -t oom-demo .
 
-docker run -d --name leaky \
-  --memory=128m --memory-swap=128m \
-  --restart=always \
-  -e MODE=leak \
-  oom-demo
+docker run -d --name leaky --memory=128m --memory-swap=128m -e MODE=leak oom-demo
 
 docker logs -f leaky
 
