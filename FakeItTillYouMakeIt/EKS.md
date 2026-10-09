@@ -1,6 +1,4 @@
-You pasted questions 10 to 14 with no instruction, so I'm assuming you want the actual troubleshooting walkthrough behind each one. Tell me if you wanted something else, such as scoring rubrics or test scenarios.
-
-## 10. Pod gets AccessDenied on S3 or another AWS service
+## 1. Pod gets AccessDenied on S3 or another AWS service
 
 The first question is **which identity is the pod actually using**. Most cases are the pod silently falling back to the node's role.
 
@@ -23,7 +21,7 @@ The first question is **which identity is the pod actually using**. Most cases a
 4. **Old SDK versions** that don't support web identity or Pod Identity fall back to the node role.
 5. If the identity is correct, the problem is permissions: the role's IAM policy, the bucket policy, KMS key policy (for encrypted objects), permission boundaries, SCPs, and VPC endpoint policies. CloudTrail shows the denied call and the reason.
 
-## 11. `kubectl` returns Unauthorized or Forbidden
+## 2. `kubectl` returns Unauthorized or Forbidden
 
 First split the error type:
 
@@ -41,7 +39,7 @@ Steps:
 4. For Forbidden: `kubectl auth can-i <verb> <resource> -n <ns>` and check RoleBindings and ClusterRoleBindings for the user or group.
 5. For timeouts: check the cluster's endpoint access settings. A private-only endpoint is reachable only from the VPC (VPN, bastion, peering), and the endpoint security group must allow the caller.
 
-## 12. Pods can't get IPs, or won't schedule on a node with free CPU
+## 3. Pods can't get IPs, or won't schedule on a node with free CPU
 
 With the AWS VPC CNI, every pod takes a real VPC IP, so IP capacity is a second resource alongside CPU and memory.
 
@@ -53,7 +51,7 @@ With the AWS VPC CNI, every pod takes a real VPC IP, so IP capacity is a second 
 4. Check CNI logs: `kubectl -n kube-system logs -l k8s-app=aws-node` and `kubectl -n kube-system get pods -l k8s-app=aws-node`.
 5. Fixes: enable prefix delegation (`ENABLE_PREFIX_DELEGATION=true`), use larger instances, add subnets or a secondary CIDR with custom networking, and tune warm IP settings if they waste addresses.
 
-## 13. Load balancer not created, or targets unhealthy
+## 4. Load balancer not created, or targets unhealthy
 
 1. Check the controller is running: `kubectl -n kube-system get deploy aws-load-balancer-controller` and its logs. Permission errors in the logs usually mean a missing IAM policy on its role.
 2. Check the resource is actually handled by it:
@@ -71,7 +69,7 @@ With the AWS VPC CNI, every pod takes a real VPC IP, so IP capacity is a second 
    - **Target type:** `ip` goes straight to pods, while `instance` goes through the NodePort.
    - The pod passes its readiness probe, and the Service has endpoints.
 
-## 14. Node is NotReady
+## 5. Node is NotReady
 
 1. `kubectl describe node <n>` shows the Conditions (`Ready`, `MemoryPressure`, `DiskPressure`, `PIDPressure`, `NetworkUnavailable`) and recent events. "Kubelet stopped posting node status" means the node isn't communicating.
 2. Check the EC2 side: instance state and status checks (system and instance), and console output.
